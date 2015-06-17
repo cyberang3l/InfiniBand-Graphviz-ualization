@@ -379,32 +379,33 @@ if __name__ == '__main__':
                         separator = "|"
                     label = "{}|<{}> {}".format(label, port, port)
 
-                remote_port = topology[node.name][port].values()[0]
-                remote_host = topology[node.name][port].keys()[0]
-                try:
-                    # Check if there is already a link established...
-                    # If not, the 'get_edge' command will raise an exception and a new edge will be added
-                    G.get_edge(remote_host, node.name, key="{}-{}".format(port, remote_port))
-                except:
-                    if(detailed):
-                        G.add_edge(node.name, remote_host, key="{}-{}".format(remote_port, port), headport = remote_port, tailport = port)
-                    else:
-                        G.add_edge(node.name, remote_host, key="{}-{}".format(remote_port, port))
+                if port in topology[node.name].keys():
+                    remote_port = topology[node.name][port].values()[0]
+                    remote_host = topology[node.name][port].keys()[0]
+                    try:
+                        # Check if there is already a link established...
+                        # If not, the 'get_edge' command will raise an exception and a new edge will be added
+                        G.get_edge(remote_host, node.name, key="{}-{}".format(port, remote_port))
+                    except:
+                        if(detailed):
+                            G.add_edge(node.name, remote_host, key="{}-{}".format(remote_port, port), headport = remote_port, tailport = port)
+                        else:
+                            G.add_edge(node.name, remote_host, key="{}-{}".format(remote_port, port))
 
-                    edge = G.get_edge(node.name, remote_host, key="{}-{}".format(remote_port, port))
-                    if topology[remote_host]['node_type'] == 'hca':
-                        edge.attr['color'] = HCA_Edge_Color
-                        if useClusters:
-                            if (Subgraph_For_Current_Switch is None):
-                                Subgraph_For_Current_Switch = G.subgraph(remote_host, 'cluster{}'.format(global_cluster_id))
-                                Subgraph_For_Current_Switch.graph_attr['fillcolor'] = Cluster_Color
-                                Subgraph_For_Current_Switch.graph_attr['style'] = 'filled'
-                                global_cluster_id = global_cluster_id + 1
-                            else:
-                                Subgraph_For_Current_Switch.add_node(remote_host)
-                    else:
-                        # Else the node connects two switches.
-                        edge.attr['color'] = Switch_Edge_Color
+                        edge = G.get_edge(node.name, remote_host, key="{}-{}".format(remote_port, port))
+                        if topology[remote_host]['node_type'] == 'hca':
+                            edge.attr['color'] = HCA_Edge_Color
+                            if useClusters:
+                                if (Subgraph_For_Current_Switch is None):
+                                    Subgraph_For_Current_Switch = G.subgraph(remote_host, 'cluster{}'.format(global_cluster_id))
+                                    Subgraph_For_Current_Switch.graph_attr['fillcolor'] = Cluster_Color
+                                    Subgraph_For_Current_Switch.graph_attr['style'] = 'filled'
+                                    global_cluster_id = global_cluster_id + 1
+                                else:
+                                    Subgraph_For_Current_Switch.add_node(remote_host)
+                        else:
+                            # Else the node connects two switches.
+                            edge.attr['color'] = Switch_Edge_Color
 
 
         node.attr['label'] = label
