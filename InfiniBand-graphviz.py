@@ -20,15 +20,13 @@ import sys
 import re
 import argparse
 import logging
-import subprocess   # Needed to execute system commands. If you remove the class "executeCommand", you can safely remove this line as well
-import datetime     # If you remove the class "executeCommand", you can safely remove this line as well
 import pygraphviz as pgv
 from collections import OrderedDict
 
 __all__ = [
     'quick_regexp', 'print_',
     'strip_string_list',
-    'executeCommand', 'LOG'
+    'LOG'
 ]
 
 PROGRAM_NAME = 'InfiniBand-Graphviz-ualization'
