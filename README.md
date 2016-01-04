@@ -17,10 +17,10 @@ For further analysis and visualization, you can use Gephi.
 
 # Create a beautiful graph with [Gephi](http://gephi.github.io/)
 If you want to generate a beautiful graph with Gephi, follow the following steps:
-  1. Load the generate dot file in Gephi.
+  1. Load the generated dot file in Gephi.
   2. Go to the 'Overview' tab and choose a placement layout (I really like the results of 'Force Atlas 3D' algorithm).
   3. Run the layout until you are satisfied with the placement and press stop.
-  4. Got the 'Preview window and press the 'Refresh' button.
+  4. Go to the 'Preview' window and press the 'Refresh' button.
   5. Under the 'Edges' group, untick the 'Curved' tick box and change the 'Color' of the edges from 'mixed' to 'original'.
   6. Choose a 'black' background if you used the '--optimized-for-black-bg (-o)' option when you ran the script, and press a final refresh.
   7. Once you are satisfied with the result, press the 'Export SVG/PDF/PNG' button to save the layout.
