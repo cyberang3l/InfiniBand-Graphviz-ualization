@@ -274,11 +274,11 @@ if __name__ == '__main__':
             if line:
                 r = quick_regexp()
                 # This regexp will read the name of nodes and the number of ports (Switches or HCAs)
-                if (r.search("^(\w+)\s+(\d+)\s+\"(\w+)\"", line)):
+                if (r.search("^(\w+)\s+(\d+)\s+\"(.+?)\"\s+#\s+\"(.+?)\"", line)):
                     current_node = r.groups[2]
                     topology[current_node] = OrderedDict()
                     topology[current_node]['number_of_ports'] = int(r.groups[1])
-                    if r.groups[0].lower().startswith('switch'):
+                    if r.groups[0] == 'Switch':
                         topology[current_node]['node_type'] = 'switch'
                         num_of_switches = num_of_switches + 1
                     else:
@@ -286,7 +286,7 @@ if __name__ == '__main__':
                         num_of_hcas = num_of_hcas + 1
 
                 # This regexp will read the port lines from a dump
-                if (r.search("^\[(\d+)\].*\"(\w+)\"\[(\d+)\]", line)):
+                if (r.search("^\[(\d+)\].*?\"(.+?)\"\[(\d+)\]", line)):
                     local_port = int(r.groups[0])
                     connected_to_remote_host = r.groups[1]
                     connected_to_remote_port = int(r.groups[2])
@@ -408,7 +408,7 @@ if __name__ == '__main__':
 
         node.attr['label'] = label
 
-    #print G.string()
+    #print(G.string())
     LOG.info("Total number of nodes: {}\n"
              "Total number of Switches: {}\n"
              "Total number of HCAs: {}\n"
