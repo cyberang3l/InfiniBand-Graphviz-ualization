@@ -30,7 +30,7 @@ __all__ = [
 ]
 
 PROGRAM_NAME = 'InfiniBand-Graphviz-ualization'
-VERSION = '0.0.1'
+VERSION = '0.1.0'
 AUTHOR = 'Vangelis Tasoulas'
 
 LOG = logging.getLogger('default.' + __name__)
