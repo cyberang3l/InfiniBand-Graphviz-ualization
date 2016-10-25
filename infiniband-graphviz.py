@@ -205,7 +205,7 @@ def _command_Line_Options():
                         default=False,
                         dest="use_clusters",
                         help="If enabled, HCAs (nodes) connected on the same switches are grouped in the same cluster.\n"
-                             "Unfortunately only 'dot' supports clustering at the moment, so clustering is disabled it by default.\n"
+                             "Unfortunately only 'dot' supports clustering at the moment, so clustering is disabled by default.\n"
                              "Default: False")
     parser.add_argument("-o", "--optimized-for-black-bg",
                         action="store_true",
