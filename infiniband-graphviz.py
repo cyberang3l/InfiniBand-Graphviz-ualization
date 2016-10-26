@@ -15,18 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 import os
 import sys
 import re
 import argparse
 import logging
+import time
 import pygraphviz as pgv
+import xml.etree.ElementTree as et
+import xml.dom.minidom as md
 from collections import OrderedDict
 
 __all__ = [
     'quick_regexp', 'print_',
-    'strip_string_list',
-    'LOG'
+    'hex_to_rgb', 'LOG'
 ]
 
 PROGRAM_NAME = 'InfiniBand-Graphviz-ualization'
@@ -75,12 +78,10 @@ def print_(value_to_be_printed, print_indent=0, spaces_per_indent=4, endl="\n"):
         sys.stdout.write(string)
 
 #----------------------------------------------------------------------
-def strip_string_list(string_list):
-    """
-    This function will parse all the elements from a list of strings (string_list),
-    and trim leading or trailing white spaces and/or new line characters
-    """
-    return [s.strip() for s in string_list]
+def hex_to_rgb(value):
+    value = value.lstrip('#')
+    lv = len(value)
+    return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
 
 #----------------------------------------------------------------------
 class quick_regexp(object):
@@ -219,6 +220,12 @@ def _command_Line_Options():
                         dest="render_file",
                         help="If enabled, the output will be rendered with the 'neato' layout, and saved in a PDF file.\n"
                         "Default: False")
+    parser.add_argument("-e", "--export-gexf",
+                        action="store_true",
+                        default=False,
+                        dest="export_gexf",
+                        help="Support for DOT files in Gephi is really bad. Use this option to export a gexf file if you want to play with the graph in Gephi.\n"
+                        "Default: False")
 
     opts = parser.parse_args()
 
@@ -259,6 +266,8 @@ if __name__ == '__main__':
     # If enabled, HCAs (nodes) connected on the same switches are grouped in the same cluster.
     # Unfortunately only 'dot' supports clustering at the moment, so I disable it by default.
     useClusters = options.use_clusters
+
+    exportGexf = options.export_gexf
 
     # Read the topology and build the graph in an OrderedDict
     topology_file = options.topo_file
@@ -350,6 +359,26 @@ if __name__ == '__main__':
 
     G.add_nodes_from(topology)
 
+    if exportGexf:
+        #gephi_edge_id = G.number_of_nodes()
+        gephi_edge_id = 0
+        root_node = et.Element('gexf')
+        root_node.attrib['xmlns'] = "http://www.gexf.net/1.3"
+        root_node.attrib['version'] = "1.3"
+        root_node.attrib['xmlns:viz'] = "http://www.gexf.net/1.3/viz"
+        root_node.attrib['xmlns:xsi'] = "http://www.w3.org/2001/XMLSchema-instance"
+        root_node.attrib['xsi:schemaLocation'] = "http://www.gexf.net/1.3 http://www.gexf.net/1.3/gexf.xsd"
+        meta_node = et.SubElement(root_node, 'meta', attrib = {'lastmodifieddate': time.strftime("%Y-%m-%d")})
+        creator_node = et.SubElement(meta_node, 'creator')
+        creator_node.text = PROGRAM_NAME
+        description_node = et.SubElement(meta_node, 'description')
+        description_node.text = "Graph generated from file '{}'".format(os.path.realpath(topology_file))
+        graph_node = et.SubElement(root_node, 'graph')
+        graph_node.attrib['defaultedgetype'] = "undirected"
+        graph_node.attrib['mode'] = "static"
+        nodes_node = et.SubElement(graph_node, 'nodes')
+        edges_node = et.SubElement(graph_node, 'edges')
+
     # Cluster id for the subgraphs
     if useClusters:
         global_cluster_id = 0
@@ -366,6 +395,12 @@ if __name__ == '__main__':
         elif topology[node.name]['node_type'] == 'hca':
             node.attr['fillcolor'] = HCA_Color
             node.attr['color'] = HCA_Color
+
+        if exportGexf:
+            node_node = et.SubElement(nodes_node, 'node', attrib = {'id': node.name, 'label': node.name})
+            r, g, b = hex_to_rgb(node.attr['color'])
+            et.SubElement(node_node, 'viz:color', attrib = {'r': str(r), 'g': str(g), 'b': str(b), 'a': "0.0"})
+
 
         label = node.name
         if(numPorts > 0):
@@ -405,6 +440,16 @@ if __name__ == '__main__':
                             # Else the node connects two switches.
                             edge.attr['color'] = Switch_Edge_Color
 
+                        if exportGexf:
+                            gephi_edge_id += 1
+                            edge_node = et.SubElement(edges_node, 'edge',
+                                                      attrib = {'id': str(gephi_edge_id),
+                                                                'source': node.name,
+                                                                'target': remote_host,
+                                                                'label': "{} -- {}".format(node.name, remote_host)})
+                            r, g, b = hex_to_rgb(edge.attr['color'])
+                            et.SubElement(edge_node, 'viz:color', attrib = {'r': str(r), 'g': str(g), 'b': str(b)})
+
 
         node.attr['label'] = label
 
@@ -438,11 +483,19 @@ if __name__ == '__main__':
         #dot -Tpdf -Gnslimit=1000 k-18-n-3.topology.dot -v -O
 
 
-    LOG.info("\nIf you want to generate a beautiful graph with Gephi, follow the following steps:\n"
-             "  1. Load the file '{0}' in Gephi.\n"
-             "  2. Go to the 'Overview' tab and choose a placement layout (I really like the results of 'Force Atlas 3D' algorithm).\n"
-             "  3. Run the layout until you are satisfied with the placement and press stop.\n"
-             "  4. Got the 'Preview window and press the 'Refresh' button.\n"
-             "  5. Under the 'Edges' group, untick the 'Curved' tick box and change the 'Color' of the edges from 'mixed' to 'original'\n"
-             "  6. Choose a 'black' background if you used the '--optimized-for-black-bg (-o)' option, and press a final refresh.\n"
-             "  7. Once you are satisfied with the result, press the 'Export SVG/PDF/PNG' button to save the layout.\n".format(dot_filename))
+    if exportGexf:
+        gexf_filename = "{}.gexf".format(output_filename)
+        xml_ugly = et.tostring(root_node, encoding='UTF-8', method='xml')
+        xml = md.parseString(xml_ugly)
+        with open(gexf_filename, "w") as f:
+            f.write(xml.toprettyxml(indent="  ", newl="\n", encoding='UTF-8'))
+
+        LOG.info("The gexf file has been saved in the file '{0}'.".format(gexf_filename))
+        LOG.info("\nIf you want to generate a beautiful graph with Gephi, follow the following steps:\n"
+                 "  1. Load the file '{0}' in Gephi.\n"
+                 "  2. Go to the 'Overview' tab and choose a placement layout (I like the results of 'ForceAtlas 2' algorithm).\n"
+                 "  3. Tune as needed and run the layout until you are satisfied with the placement and press stop.\n"
+                 "  4. Go to the 'Preview' tab and press the 'Refresh' button.\n"
+                 "  5. Under the 'Edges' group, untick the 'Curved' tick box and change the 'Color' of the edges from 'mixed' to 'original'\n"
+                 "  6. Choose a 'black' background if you used the '--optimized-for-black-bg (-o)' option, and press a final refresh.\n"
+                 "  7. Once you are satisfied with the result, press the 'Export SVG/PDF/PNG' button to save the layout.\n".format(gexf_filename))
