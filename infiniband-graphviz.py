@@ -226,6 +226,12 @@ def _command_Line_Options():
                         dest="export_gexf",
                         help="Support for DOT files in Gephi is really bad. Use this option to export a gexf file if you want to play with the graph in Gephi.\n"
                         "Default: False")
+    parser.add_argument("-n", "--hostnames",
+                        action="store_true",
+                        default=False,
+                        dest="use_hostnames",
+                        help="Uses host names instead of the GUIDs.\n"
+                             "Default: False")
 
     opts = parser.parse_args()
 
@@ -269,6 +275,8 @@ if __name__ == '__main__':
 
     exportGexf = options.export_gexf
 
+    use_hostnames = options.use_hostnames
+
     # Read the topology and build the graph in an OrderedDict
     topology_file = options.topo_file
     topology = OrderedDict()
@@ -284,7 +292,10 @@ if __name__ == '__main__':
                 r = quick_regexp()
                 # This regexp will read the name of nodes and the number of ports (Switches or HCAs)
                 if (r.search("^(\w+)\s+(\d+)\s+\"(.+?)\"\s+#\s+\"(.+?)\"", line)):
-                    current_node = r.groups[2]
+                    if r.groups[0] == 'Ca' and use_hostnames:
+                        current_node=r.groups[3].split(' ')[0]
+                    else:
+                        current_node = r.groups[2]
                     topology[current_node] = OrderedDict()
                     topology[current_node]['number_of_ports'] = int(r.groups[1])
                     if r.groups[0] == 'Switch':
@@ -299,6 +310,8 @@ if __name__ == '__main__':
                     local_port = int(r.groups[0])
                     connected_to_remote_host = r.groups[1]
                     connected_to_remote_port = int(r.groups[2])
+                    if (use_hostnames and r.search("^\[(\d+)\].*?\"(.+?)\"\[(\d+)\]\(.+?\)\s+#\s+\"(.+?)\"", line)):
+                        connected_to_remote_host = r.groups[3].split(' ')[0]
                     topology[current_node][local_port] = {connected_to_remote_host: connected_to_remote_port}
 
     #if(len(topology) > 1000 and detailed):
