@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2016 Vangelis Tasoulas <vangelis@tasoulas.net>
 #
@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 import os
 import sys
 import re
@@ -74,7 +73,7 @@ def print_(
     """
 
     if isinstance(value_to_be_printed, dict):
-        for key, value in value_to_be_printed.iteritems():
+        for key, value in value_to_be_printed.items():
             if isinstance(value, dict):
                 print_('{0}{1!r}:'.format(
                     print_indent * spaces_per_indent * ' ', key))
@@ -235,7 +234,7 @@ def _command_Line_Options():
         action="store_true",
         default=False,
         dest="use_clusters",
-        help=("If enabled, HCAs (nodes) connected on the same switches are"
+        help=("If enabled, HCAs (nodes) connected to the same switches are"
               " grouped in the same cluster.\n"
               "Unfortunately only 'dot' supports clustering at the moment,"
               " so clustering is disabled by default.\n"
@@ -319,7 +318,6 @@ if __name__ == '__main__':
     num_of_hcas = 0
     current_node = ""
     with open(topology_file, mode='r', buffering=1) as f:
-        isinstance(f, file)
         for line in f:
             line = line.strip()
             isinstance(line, str)
@@ -478,15 +476,15 @@ if __name__ == '__main__':
                     label = "{}|<{}> {}".format(label, port, port)
 
                 if port in topology[node.name].keys():
-                    remote_port = topology[node.name][port].values()[0]
-                    remote_host = topology[node.name][port].keys()[0]
+                    remote_port = list(topology[node.name][port].values())[0]
+                    remote_host = list(topology[node.name][port].keys())[0]
                     try:
                         # Check if there is already a link established...
-                        # If not, the 'get_edge' command will raise an
-                        # exception and a new edge will be added
+                        # If not, the 'get_edge' command will raise a
+                        # KeyError exception and a new edge will be added
                         G.get_edge(remote_host, node.name,
                                    key="{}-{}".format(port, remote_port))
-                    except:
+                    except KeyError:
                         if detailed:
                             G.add_edge(
                                 node.name,
@@ -576,7 +574,7 @@ if __name__ == '__main__':
         gexf_filename = "{}.gexf".format(output_filename)
         xml_ugly = et.tostring(root_node, encoding='UTF-8', method='xml')
         xml = md.parseString(xml_ugly)
-        with open(gexf_filename, "w") as f:
+        with open(gexf_filename, 'wb') as f:
             f.write(xml.toprettyxml(indent="  ", newl="\n", encoding='UTF-8'))
 
         LOG.info(
