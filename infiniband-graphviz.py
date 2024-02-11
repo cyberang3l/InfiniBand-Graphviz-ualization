@@ -26,6 +26,7 @@ import xml.dom.minidom as md
 from collections import OrderedDict
 import pygraphviz as pgv
 
+
 __all__ = [
     'quick_regexp', 'print_',
     'hex_to_rgb', 'LOG'
@@ -331,6 +332,10 @@ if __name__ == '__main__':
                     topology[current_node] = OrderedDict()
                     topology[current_node]['number_of_ports'] = int(
                         r.groups[1])
+                    if len(r.groups) == 4:
+                        # If we have a label, keep track of it
+                        topology[current_node]['label'] = r.groups[3]
+
                     if r.groups[0] == 'Switch':
                         topology[current_node]['node_type'] = 'switch'
                         num_of_switches = num_of_switches + 1
@@ -452,10 +457,11 @@ if __name__ == '__main__':
             node.attr['fillcolor'] = HCA_Color
             node.attr['color'] = HCA_Color
 
+        label = topology[node.name]['label'] if 'label' in topology[node.name] else node.name
         if exportGexf:
             node_node = et.SubElement(
                 nodes_node, 'node', attrib={
-                    'id': node.name, 'label': node.name
+                    'id': node.name, 'label': label
                 }
             )
             r, g, b = hex_to_rgb(node.attr['color'])
@@ -465,7 +471,6 @@ if __name__ == '__main__':
                 }
             )
 
-        label = node.name
         if numPorts > 0:
             for port in range(1, numPorts + 1):
                 if detailed:
